@@ -3,6 +3,12 @@ const ESLintWebpackPlugin = require("eslint-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
+const os = require("os");
+const TerserPlugin = require("terser-webpack-plugin");
+// const ImageMinimizerPlugin = require("image-minimizer-webpack-plugin");
+
+// cpu核心数
+const threads = os.cpus().length;
 
 const getStyleLoaders = (preProcessor) => {
     return [
@@ -72,8 +78,24 @@ module.exports = {
             },
             {
                 test: /\.js$/,
-                exclude: /node_modules/,
-                loader: "babel-loader",
+                include: path.resolve(__dirname, "../src"),
+                // exclude: /node_modules/, // 排除 node_modules代码不编译
+                use: [
+                    {
+                        loader: "thread-loader", // 开启多进程
+                        options: {
+                            worker: threads, // 数量
+                        },
+                    },
+                    {
+                        loader: "babel-loader",
+                        options: {
+                            cacheDirectory: true, // 开启babel编译缓存
+                            cacheCompression: false, // 缓存文件不要压缩
+                            plugins: ["@babel/plugin-transform-runtime"], // 减少代码体积
+                        },
+                    },
+                ],
             },
         ],
     },
@@ -81,6 +103,13 @@ module.exports = {
         new ESLintWebpackPlugin({
             // 指定检查文件的根目录
             context: path.resolve(__dirname, "../src"),
+            exclude: "node_modules",
+            cache: true,
+            cacheLocation: path.resolve(
+                __dirname,
+                "../node_modules/.cache/.eslintcache"
+            ),
+            threads, // 开启多线程
         }),
         new HtmlWebpackPlugin({
             // 以 public/index.html 为模板创建文件
@@ -92,9 +121,47 @@ module.exports = {
             filename: "static/css/main.css",
         }),
         // CSS 体积压缩
-        new CssMinimizerPlugin(),
+        // new CssMinimizerPlugin(),
     ],
-
+    optimization: {
+        minimize: true,
+        minimizer: [
+            // css压缩也可以写到optimization.minimizer里面
+            new CssMinimizerPlugin(),
+            // 当生产模式会默认开启TerserPlugin，但是我们需要进行其他配置，就要重新写了
+            new TerserPlugin({
+                parallel: threads, // 开启多进程
+            }),
+            // 图片的无损压缩
+            /* new ImageMinimizerPlugin({
+                minimizer: {
+                    implementation: ImageMinimizerPlugin.imageminGenerate,
+                    options: {
+                        plugins: [
+                            ["gifsicle", { interlaced: true }],
+                            ["jpegtran", { progressive: true }],
+                            ["optipng", { optimizationLevel: 5 }],
+                            [
+                                "svgo",
+                                {
+                                    plugins: [
+                                        "preset-default",
+                                        "prefixIds",
+                                        {
+                                            name: "sortAttrs",
+                                            params: {
+                                                xmlnsOrder: "alphabetical",
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        ],
+                    },
+                },
+            }), */
+        ],
+    },
     // 生产模式
     mode: "production",
     devtool: "source-map",
