@@ -32,9 +32,11 @@ module.exports = {
     // 输出
     output: {
         // path: 文件输出目录（绝对路径）
-        path: path.resolve(__dirname, "../dist"),
+        path: path.resolve(__dirname, "../dist"), // 生产模式需要输出
         // filename: 输出文件名
-        filename: "static/js/main.js",
+        filename: "static/js/[name].js", // 入口文件打包输出资源命名方式
+        chunkFilename: "static/js/[name].chunk.js", // 动态导入输出资源命名方式
+        assetModuleFilename: "static/media/[name].[hash][ext]", // 图片、字体等资源命名方式（注意用hash）
         clean: true, // 自动将path目录的资源清空
     },
     // loader
@@ -65,16 +67,16 @@ module.exports = {
                         maxSize: 1 * 1024,
                     },
                 },
-                generator: {
+                /* generator: {
                     filename: "static/imgs/[hash:8][ext][query]",
-                },
+                }, */
             },
             {
                 test: /\.(ttf|woff2?|map4|map3|avi)$/,
                 type: "asset/resource",
-                generator: {
+                /* generator: {
                     filename: "static/media/[hash:8][ext][query]",
-                },
+                }, */
             },
             {
                 test: /\.js$/,
@@ -118,7 +120,8 @@ module.exports = {
         }),
         // 提取 CSS 成单独文件
         new MiniCssExtractPlugin({
-            filename: "static/css/main.css",
+            filename: "static/css/[name].css",
+            chunkFilename: "static/css/[name].chunk.css",
         }),
         // CSS 体积压缩
         // new CssMinimizerPlugin(),
@@ -161,6 +164,10 @@ module.exports = {
                 },
             }), */
         ],
+        // 代码分割配置
+        splitChunks: {
+            chunks: "all", // 对所有模块都进行分割
+        },
     },
     // 生产模式
     mode: "production",
