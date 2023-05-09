@@ -6,6 +6,8 @@ const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const os = require("os");
 const TerserPlugin = require("terser-webpack-plugin");
 // const ImageMinimizerPlugin = require("image-minimizer-webpack-plugin");
+const PreloadWebpackPlugin = require("@vue/preload-webpack-plugin");
+const WorkboxPlugin = require("workbox-webpack-plugin");
 
 // cpu核心数
 const threads = os.cpus().length;
@@ -34,8 +36,8 @@ module.exports = {
         // path: 文件输出目录（绝对路径）
         path: path.resolve(__dirname, "../dist"), // 生产模式需要输出
         // filename: 输出文件名
-        filename: "static/js/[name].js", // 入口文件打包输出资源命名方式
-        chunkFilename: "static/js/[name].chunk.js", // 动态导入输出资源命名方式
+        filename: "static/js/[name].[contenthash:8].js", // 入口文件打包输出资源命名方式
+        chunkFilename: "static/js/[name].[contenthash:8].chunk.js", // 动态导入输出资源命名方式
         assetModuleFilename: "static/media/[name].[hash][ext]", // 图片、字体等资源命名方式（注意用hash）
         clean: true, // 自动将path目录的资源清空
     },
@@ -120,11 +122,21 @@ module.exports = {
         }),
         // 提取 CSS 成单独文件
         new MiniCssExtractPlugin({
-            filename: "static/css/[name].css",
-            chunkFilename: "static/css/[name].chunk.css",
+            filename: "static/css/[name].[contenthash:8].css",
+            chunkFilename: "static/css/[name].[contenthash:8].chunk.css",
         }),
         // CSS 体积压缩
         // new CssMinimizerPlugin(),
+        new PreloadWebpackPlugin({
+            rel: "preload", // preload相比prefetch兼容性更好
+            as: "script",
+        }),
+        new WorkboxPlugin.GenerateSW({
+            // 这些选项帮助快速启用 ServiceWorkers
+            // 不允许遗留任何“旧的” ServiceWorkers
+            clientsClaim: true,
+            skipWaiting: true,
+        }),
     ],
     optimization: {
         minimize: true,
@@ -167,6 +179,10 @@ module.exports = {
         // 代码分割配置
         splitChunks: {
             chunks: "all", // 对所有模块都进行分割
+        },
+        // 提取runtime文件
+        runtimeChunk: {
+            name: (entrypoint) => `runtime~${entrypoint.name}`,
         },
     },
     // 生产模式

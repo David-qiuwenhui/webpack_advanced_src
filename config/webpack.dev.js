@@ -73,9 +73,9 @@ module.exports = {
             // 指定检查文件的根目录
             context: path.resolve(__dirname, "../src"),
             exclude: "node_modules", // 不需要编译node_module文件
-            chche: true, // 开启缓存
+            cache: true, // 开启缓存
             // 缓存目录
-            chcheLocation: path.resolve(
+            cacheLocation: path.resolve(
                 __dirname,
                 "../node_modules/.cache/.eslintcache"
             ),
