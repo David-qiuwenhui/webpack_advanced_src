@@ -112,7 +112,7 @@ module.exports = {
             cacheLocation: path.resolve(
                 __dirname,
                 "../node_modules/.cache/.eslintcache"
-            ),
+            ), // ESLint的缓存路径
             threads, // 开启多线程
         }),
         new HtmlWebpackPlugin({
